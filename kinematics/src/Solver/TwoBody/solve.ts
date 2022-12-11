@@ -1,8 +1,9 @@
 import Particle from "../../Model/Particle";
+import LabSolution from "../../Model/TwoBody/LabSolution";
 import Problem from "../../Model/TwoBody/Problem";
 import RestSolution from "../../Model/TwoBody/RestSolution";
 import Solution from "../../Model/TwoBody/Solution";
-
+/*
 interface Property {
   parent(problem: Problem): number;
   daughterA(problem: Problem): number;
@@ -24,6 +25,10 @@ class Mass implements Property {
 const getProperty =
   (p: Property) => (k: keyof Property) => (problem: Problem) =>
     p[k](problem);
+*/
+
+const getMomentum = (energy: number, mass: number): number =>
+  Math.sqrt(energy * energy - mass * mass);
 
 const solveRestFrameA = (problem: Problem): Particle => {
   const { parent, daughterA, daughterB, centreOfMassDecayAngle } = problem;
@@ -32,7 +37,7 @@ const solveRestFrameA = (problem: Problem): Particle => {
       daughterA.mass * daughterA.mass -
       daughterB.mass * daughterB.mass) /
     (2 * parent.mass);
-  const momentum = Math.sqrt(energy * energy - daughterA.mass * daughterA.mass);
+  const momentum = getMomentum(energy, daughterA.mass);
   const x = momentum * Math.cos(centreOfMassDecayAngle);
   const y = momentum * Math.sin(centreOfMassDecayAngle);
   return {
@@ -49,7 +54,7 @@ const solveRestFrameB = (problem: Problem): Particle => {
       daughterB.mass * daughterB.mass -
       daughterA.mass * daughterA.mass) /
     (2 * parent.mass);
-  const momentum = Math.sqrt(energy * energy - daughterB.mass * daughterB.mass);
+  const momentum = getMomentum(energy, daughterB.mass);
   const x = -momentum * Math.cos(centreOfMassDecayAngle);
   const y = -momentum * Math.sin(centreOfMassDecayAngle);
   return {
@@ -66,10 +71,35 @@ const solveRestFrame = (problem: Problem): RestSolution => {
   };
 };
 
+const solveLabParent = (problem: Problem): Particle => {
+  const mass = problem.parent.mass;
+  const energy = problem.parent.energy;
+  const momentum = energy ? getMomentum(energy, mass) : undefined;
+  return {
+    mass,
+    energy,
+    momentum: momentum
+      ? { magnitude: momentum, x: momentum, y: 0, z: 0 }
+      : undefined,
+  };
+};
+const solveLabFrame = (
+  rest: RestSolution,
+  problem: Problem
+): LabSolution | undefined => {
+  const parent = solveLabParent(problem);
+  if (parent.energy && parent.momentum) {
+    const gamma = parent.energy / problem.parent.mass;
+    const betagamma = parent.momentum.magnitude / problem.parent.mass;
+  }
+  return undefined;
+};
+
 const solve = async (problem: Problem): Promise<Solution> => {
   //step 1 sovle in rest frame
   const rest = solveRestFrame(problem);
-  return {};
+  const lab = solveLabFrame(rest, problem);
+  return { rest, lab };
 };
 
 export default solve;
