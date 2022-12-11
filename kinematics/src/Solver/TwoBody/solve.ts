@@ -83,14 +83,36 @@ const solveLabParent = (problem: Problem): Particle => {
       : undefined,
   };
 };
+
+const transformToLab =
+  (gamma: number, betagamma: number) => (particle: Particle) => {
+    if (particle.energy && particle.momentum) {
+      const energy = gamma * particle.energy + betagamma * particle.momentum.x;
+      const x = betagamma * particle.energy + gamma * particle.momentum.x;
+      const y = particle.momentum.y;
+      const magnitude = Math.sqrt(x * x + y * y);
+      return {
+        mass: particle.mass,
+        energy,
+        momentum: { magnitude, x, y, z: 0 },
+      };
+    }
+  };
 const solveLabFrame = (
   rest: RestSolution,
   problem: Problem
 ): LabSolution | undefined => {
   const parent = solveLabParent(problem);
   if (parent.energy && parent.momentum) {
-    const gamma = parent.energy / problem.parent.mass;
-    const betagamma = parent.momentum.magnitude / problem.parent.mass;
+    const transform = transformToLab(
+      parent.energy / problem.parent.mass,
+      parent.momentum.magnitude / problem.parent.mass
+    );
+    const daughterA = transform(rest.daughterA);
+    const daughterB = transform(rest.daughterB);
+    if (daughterA && daughterB) {
+      return { parent, daughterA, daughterB };
+    }
   }
   return undefined;
 };
