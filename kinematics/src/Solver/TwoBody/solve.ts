@@ -1,4 +1,7 @@
-import Particle from "../../Model/Particle";
+import Particle, {
+  isParticle,
+  isParticleWithEnergy,
+} from "../../Model/Particle";
 import LabSolution from "../../Model/TwoBody/LabSolution";
 import Problem from "../../Model/TwoBody/Problem";
 import RestSolution from "../../Model/TwoBody/RestSolution";
@@ -118,10 +121,35 @@ const solveLabFrame = (
 };
 
 const solve = async (problem: Problem): Promise<Solution> => {
-  //step 1 sovle in rest frame
   const rest = solveRestFrame(problem);
   const lab = solveLabFrame(rest, problem);
   return { rest, lab };
+};
+
+export const isProblem = (obj: any): boolean => {
+  if (!("centreOfMassDecayAngle" in obj)) {
+    return false;
+  }
+  if (!("parent" in obj)) {
+    return false;
+  }
+  if (!("daughterA" in obj)) {
+    return false;
+  }
+  if (!("daughterB" in obj)) {
+    return false;
+  }
+  const { parent, daughterA, daughterB } = obj;
+  if (!isParticleWithEnergy(parent)) {
+    return false;
+  }
+  if (!isParticle(daughterA)) {
+    return false;
+  }
+  if (!isParticle(daughterB)) {
+    return false;
+  }
+  return true;
 };
 
 export default solve;
