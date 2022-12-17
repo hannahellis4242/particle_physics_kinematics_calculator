@@ -1,6 +1,5 @@
 import { Router } from "express";
 import Problem from "../Model/TwoBody/Problem";
-import { v4 } from "uuid";
 import Solution from "../Model/TwoBody/Solution";
 import solve, { isProblem } from "../Solver/TwoBody/solve";
 import { MongoClient, ObjectId } from "mongodb";
@@ -14,16 +13,22 @@ const problemCollectionName = "problem";
 const solutionCollectionName = "solution";
 
 interface ProblemDocument {
-  time: Date;
+  time: number;
   problem: Problem;
   solutionID?: ObjectId;
+}
+
+interface SolutionDocument {
+  problemID: ObjectId;
+  time: number;
+  solution: Solution;
 }
 
 const addProblem = async (problem: Problem): Promise<ObjectId> => {
   await client.connect();
   const db = client.db(dbName);
   const collection = db.collection(problemCollectionName);
-  const document: ProblemDocument = { time: new Date(), problem };
+  const document: ProblemDocument = { time: Date.now(), problem };
   const result = await collection.insertOne(document);
   client.close();
   return result.insertedId;
@@ -35,6 +40,7 @@ const addSolution = async (problemID: ObjectId, solution: Solution) => {
   const solutions = db.collection(solutionCollectionName);
   const solutionResult = await solutions.insertOne({
     problemID,
+    time: Date.now(),
     solution,
   });
   client.close();
@@ -75,6 +81,19 @@ const findProblem = async (
   return result as unknown as ProblemDocument;
 };
 
+const findSolution = async (
+  solutionID: ObjectId
+): Promise<SolutionDocument | undefined> => {
+  await client.connect();
+  const db = client.db(dbName);
+  const collection = db.collection(solutionCollectionName);
+  const result = await collection
+    .findOne({ _id: solutionID })
+    .then((doc) => (doc ? doc : undefined));
+  client.close();
+  return result as unknown as SolutionDocument;
+};
+
 const twoBody = Router();
 
 twoBody.post("/", async (req, res) => {
@@ -90,33 +109,59 @@ twoBody.post("/", async (req, res) => {
   }
 });
 
-twoBody.get("/", async (req, res) => {
+twoBody.get("/problem", async (req, res) => {
   const target = req.query.id;
   if (target) {
     const id = new ObjectId(target as string);
-    const document = await findProblem(id);
-    if (document) {
-      res.json(document);
+    const problem = await findProblem(id);
+    if (problem) {
+      res.json({ status: "processing", problem });
     } else {
       res.sendStatus(404);
     }
-    /*
-    //check if it's queued
-    const item = queued.find((value) => value === target);
-    if (item) {
-      res.json({ status: "queued" });
-    } else {
-      //if it's not queued then maybe it's solved
-      const element = db.find(({ id }) => id === target);
-      if (element) {
-        res.json({ status: "done", solution: element });
-      } else {
-        res.status(404).json({ status: "not queued" });
-      }
-    }*/
   } else {
-    res.status(400).json({ usage: "/two-body?id=<problem id>" });
+    res.status(400).json({ usage: "/two-body/problem?id=<problem id>" });
   }
+});
+
+twoBody.get("/solution", async (req, res) => {
+  const target = req.query.id;
+  if (target) {
+    const id = new ObjectId(target as string);
+    const problem = await findSolution(id);
+    if (problem) {
+      res.json({ status: "processing", problem });
+    } else {
+      res.sendStatus(404);
+    }
+  } else {
+    res.status(400).json({ usage: "/two-body/solution?id=<solution id>" });
+  }
+});
+
+twoBody.get("/", async (req, res) => {
+  const target = req.query.id;
+  if (!target) {
+    res.status(400).json({ usage: "/two-body?id=<problem id>" });
+    return;
+  }
+  const id = new ObjectId(target as string);
+  const problem = await findProblem(id);
+  if (!problem) {
+    res.status(404).json({ message: "could not find problem" });
+    return;
+  }
+  const { solutionID } = problem;
+  if (!solutionID) {
+    res.json({ status: "processing", problem });
+    return;
+  }
+  const solution = await findSolution(solutionID);
+  if (!solution) {
+    res.status(404).json({ message: "could not find solution" });
+    return;
+  }
+  res.json({ problem, solution });
 });
 
 export default twoBody;
