@@ -6,5 +6,12 @@ services:
       - "27017:27017"
     volumes:
       - db:/data/db
+  kinematics:
+    build: kinematics
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_HOST=db
+      - KINEMATICS_HOST=0.0.0.0
 volumes:
   db:
