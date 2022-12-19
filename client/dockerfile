@@ -1,0 +1,12 @@
+FROM node:current-alpine
+
+COPY package.json .
+RUN npm i
+
+COPY index.d.ts .
+COPY webpack.config.js .
+COPY tsconfig.json .
+COPY src ./src
+RUN npx webpack --mode production
+
+CMD npx http-server dist -p 3000 -a 0.0.0.0
