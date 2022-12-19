@@ -1,4 +1,5 @@
 import Arrow from "../canvas/Arrow";
+import Fill from "../canvas/Fill";
 import Stroke from "../canvas/Stroke";
 import classes from "./App.module.css";
 import Canvas from "./Canvas";
@@ -6,12 +7,15 @@ const App = () => {
   return (
     <Canvas
       item={
-        new Stroke(
+        new Fill(
           "red",
-          new Arrow(
-            { x: 100, y: 100 },
-            { x: 300, y: 400 },
-            { type: "line", width: 50, length: 70 }
+          new Stroke(
+            "red",
+            new Arrow(
+              { x: 100, y: 100 },
+              { x: 300, y: 400 },
+              { type: "flaired", width: 50, length: 50, flair: 20 }
+            )
           )
         )
       }
