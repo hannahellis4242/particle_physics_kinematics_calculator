@@ -1,9 +1,5 @@
 import { useEffect, useRef } from "react";
 import CanvasItem from "../canvas/CanvasItem";
-const setup = (canvas: HTMLCanvasElement) => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-};
 const draw = (canvas: HTMLCanvasElement, item: CanvasItem) => {
   const context = canvas.getContext("2d");
   if (context) {
@@ -17,7 +13,8 @@ const Canvas = (props: { item: CanvasItem }) => {
     const canvas = canvasRef.current;
     console.log(canvas);
     if (canvas) {
-      setup(canvas);
+      canvas.width = window.innerWidth * 0.45;
+      canvas.height = window.innerHeight * 0.5;
       draw(canvas, props.item);
     }
   }, []);

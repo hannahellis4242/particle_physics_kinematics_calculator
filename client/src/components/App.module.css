@@ -1,6 +1,25 @@
-.app {
+#app header {
   font-weight: bold;
+  font-size: x-large;
+}
+#control {
+  display: flex;
+  justify-content: space-evenly;
+}
+#diagrams {
+  display: flex;
+  justify-content: space-evenly;
+}
+#diagrams header {
   font-size: large;
-  color: red;
-  background-color: black;
+  text-align: center;
+}
+#diagrams canvas {
+  border: 1px solid black;
+}
+#output {
+  border: 1px solid black;
+  border-radius: 5px;
+  margin: 5px;
+  padding: 5px;
 }
